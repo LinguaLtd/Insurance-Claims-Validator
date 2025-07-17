@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Copy, Download, FileText, CheckCircle, Search, X } from 'lucide-react';
+import { Copy, Download, FileText, CheckCircle, Search, X, Brain, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { GeminiService, TextAnalysisResult } from '@/services/geminiService';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ExtractedTextProps {
   text: string;
@@ -15,6 +17,9 @@ interface ExtractedTextProps {
 
 export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<TextAnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const geminiService = new GeminiService();
 
   const highlightedText = useMemo(() => {
     if (!searchQuery.trim()) return text;
@@ -50,6 +55,20 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success('Text file downloaded');
+  };
+
+  const analyzeText = async () => {
+    setIsAnalyzing(true);
+    try {
+      const result = await geminiService.analyzeTextCoherence(text);
+      setAnalysisResult(result);
+      toast.success('Text analysis completed');
+    } catch (error) {
+      toast.error('Failed to analyze text');
+      console.error('Analysis error:', error);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const wordCount = text.trim().split(/\s+/).length;
@@ -123,6 +142,16 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={analyzeText}
+                disabled={isAnalyzing}
+                className="hover:bg-purple-500 hover:text-white"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                {isAnalyzing ? 'Analyzing...' : 'Analyze with Gemini'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={copyToClipboard}
                 className="hover:bg-primary hover:text-primary-foreground"
               >
@@ -173,6 +202,51 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Analysis Results */}
+      {analysisResult && (
+        <Card className="bg-gradient-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Brain className="h-5 w-5 text-purple-500" />
+              <span>Gemini Analysis Results</span>
+              <span className={`text-sm font-normal px-2 py-1 rounded-full ${
+                analysisResult.isCoherent 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {analysisResult.isCoherent ? 'Coherent' : 'Issues Found'}
+              </span>
+              <span className="text-sm font-normal text-muted-foreground">
+                Confidence: {analysisResult.confidence}%
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-semibold mb-2">Overall Assessment:</h4>
+              <p className="text-muted-foreground">{analysisResult.overallAssessment}</p>
+            </div>
+            
+            {analysisResult.discrepancies.length > 0 && (
+              <div>
+                <h4 className="font-semibold mb-2 flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-1 text-orange-500" />
+                  Issues Found:
+                </h4>
+                <div className="space-y-2">
+                  {analysisResult.discrepancies.map((issue, index) => (
+                    <Alert key={index} className="border-orange-200">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{issue}</AlertDescription>
+                    </Alert>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

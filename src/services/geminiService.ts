@@ -6,6 +6,13 @@ export interface DocumentAnalysisResult {
   filename: string;
 }
 
+export interface TextAnalysisResult {
+  isCoherent: boolean;
+  discrepancies: string[];
+  overallAssessment: string;
+  confidence: number;
+}
+
 export class GeminiService {
   private async fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -97,6 +104,94 @@ export class GeminiService {
       }
       
       throw new Error('Failed to extract text from document. Please try again.');
+    }
+  }
+
+  async analyzeTextCoherence(text: string): Promise<TextAnalysisResult> {
+    try {
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Analyze the following extracted text for coherence, logical flow, and potential discrepancies. Look for:
+1. Inconsistent information or contradictions
+2. Missing context or incomplete sentences
+3. Formatting errors that affect readability
+4. Logical flow issues
+5. Data integrity problems
+
+Provide a JSON response with the following structure:
+{
+  "isCoherent": boolean,
+  "discrepancies": ["list of specific issues found"],
+  "overallAssessment": "detailed assessment summary",
+  "confidence": number (0-100)
+}
+
+Text to analyze:
+${text}`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 2048,
+        }
+      };
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('No analysis content found in the API response');
+      }
+
+      const analysisText = data.candidates[0].content.parts[0].text;
+      
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+        
+        // Fallback: create a basic response if JSON parsing fails
+        return {
+          isCoherent: !analysisText.toLowerCase().includes('issue') && !analysisText.toLowerCase().includes('problem'),
+          discrepancies: analysisText.toLowerCase().includes('issue') || analysisText.toLowerCase().includes('problem') 
+            ? ['Text analysis found potential issues - see detailed assessment'] 
+            : [],
+          overallAssessment: analysisText,
+          confidence: 75
+        };
+      } catch (parseError) {
+        throw new Error('Failed to parse analysis results');
+      }
+
+    } catch (error) {
+      console.error('Error analyzing text:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Failed to analyze text. Please try again.');
     }
   }
 }
