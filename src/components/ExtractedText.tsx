@@ -1,9 +1,10 @@
-import React from 'react';
-import { Copy, Download, FileText, CheckCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Copy, Download, FileText, CheckCircle, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 interface ExtractedTextProps {
@@ -13,6 +14,23 @@ interface ExtractedTextProps {
 }
 
 export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const highlightedText = useMemo(() => {
+    if (!searchQuery.trim()) return text;
+    
+    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.split(regex).map((part, index) => 
+      regex.test(part) ? `<mark class="bg-primary/20 text-primary font-medium">${part}</mark>` : part
+    ).join('');
+  }, [text, searchQuery]);
+
+  const searchMatches = useMemo(() => {
+    if (!searchQuery.trim()) return 0;
+    const regex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return (text.match(regex) || []).length;
+  }, [text, searchQuery]);
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -96,6 +114,11 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
             <CardTitle className="flex items-center space-x-2">
               <FileText className="h-5 w-5 text-primary" />
               <span>Extracted Text</span>
+              {searchMatches > 0 && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({searchMatches} matches)
+                </span>
+              )}
             </CardTitle>
             <div className="flex space-x-2">
               <Button
@@ -118,13 +141,36 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
               </Button>
             </div>
           </div>
+          
+          {/* Search Bar */}
+          <div className="mt-4 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search in extracted text..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-10 bg-background/50 border-border/50 focus:border-primary"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-background/80"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <Separator className="bg-border" />
         <CardContent className="p-0">
           <ScrollArea className="h-96 p-6">
-            <pre className="whitespace-pre-wrap font-mono text-sm text-foreground leading-relaxed">
-              {text}
-            </pre>
+            <pre 
+              className="whitespace-pre-wrap font-mono text-sm text-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: highlightedText }}
+            />
           </ScrollArea>
         </CardContent>
       </Card>
