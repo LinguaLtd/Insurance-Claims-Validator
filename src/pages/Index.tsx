@@ -42,7 +42,7 @@ const Index = () => {
             </div>
             <div className="text-center">
               <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Docu Gemini View
+                DeepExtract
               </h1>
               <p className="text-muted-foreground">
                 AI-Powered Document Text Extraction
@@ -63,7 +63,7 @@ const Index = () => {
                   Extract Text from Any Document
                 </h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Upload your documents and let Google's Gemini AI extract all the text content. 
+                  Upload your documents and let our AI extract all the text content. 
                   Perfect for PDFs, images, Word documents, and more.
                 </p>
               </div>
@@ -91,7 +91,7 @@ const Index = () => {
                   </div>
                   <h3 className="font-semibold text-foreground">AI-Powered</h3>
                   <p className="text-sm text-muted-foreground">
-                    Uses Google's Gemini AI for accurate text extraction
+                    Uses advanced AI for accurate text extraction
                   </p>
                 </div>
                 
@@ -120,7 +120,7 @@ const Index = () => {
       <footer className="border-t border-border bg-gradient-card mt-16">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center text-muted-foreground">
-            <p>Powered by Google Gemini AI • Built with React & Tailwind CSS</p>
+            <p>Powered by Advanced AI • Built with React & Tailwind CSS</p>
           </div>
         </div>
       </footer>
