@@ -19,10 +19,9 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
   const highlightedText = useMemo(() => {
     if (!searchQuery.trim()) return text;
     
-    const regex = new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.split(regex).map((part, index) => 
-      regex.test(part) ? `<mark class="bg-primary/20 text-primary font-medium">${part}</mark>` : part
-    ).join('');
+    const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'gi');
+    return text.replace(regex, '<mark class="bg-primary/20 text-primary font-medium rounded px-1">$1</mark>');
   }, [text, searchQuery]);
 
   const searchMatches = useMemo(() => {
