@@ -8,9 +8,10 @@ import { ClaimDocument } from '@/types/insurance';
 
 interface ClaimAnalysisCardProps {
   document: ClaimDocument;
+  onClick?: () => void;
 }
 
-export function ClaimAnalysisCard({ document }: ClaimAnalysisCardProps) {
+export function ClaimAnalysisCard({ document, onClick }: ClaimAnalysisCardProps) {
   const getStatusIcon = () => {
     switch (document.status) {
       case 'pending':
@@ -47,7 +48,10 @@ export function ClaimAnalysisCard({ document }: ClaimAnalysisCardProps) {
   };
 
   return (
-    <Card className="bg-gradient-card">
+    <Card 
+      className="bg-gradient-card cursor-pointer hover:shadow-lg transition-all duration-200" 
+      onClick={onClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2 text-lg">

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Shield, TrendingUp, AlertTriangle, CheckCircle, ArrowLeft, FileText } from 'lucide-react';
+import { Shield, TrendingUp, AlertTriangle, CheckCircle, ArrowLeft, FileText, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ClaimAnalysisCard } from '@/components/ClaimAnalysisCard';
+import { ClaimDetailModal } from '@/components/ClaimDetailModal';
+import { useClaimHistory } from '@/hooks/useClaimHistory';
 import { GeminiService } from '@/services/geminiService';
 import { ClaimDocument } from '@/types/insurance';
 import { toast } from 'sonner';
@@ -12,34 +14,51 @@ import { toast } from 'sonner';
 export default function Dashboard() {
   const location = useLocation();
   const [documents, setDocuments] = useState<ClaimDocument[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    flagged: 0,
-    processed: 0,
-    avgRisk: 'low' as 'low' | 'medium' | 'high'
-  });
+  const [selectedClaim, setSelectedClaim] = useState<ClaimDocument | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const {
+    history,
+    addClaims,
+    updateClaim,
+    clearHistory,
+    getFlaggedClaims,
+    getApprovedClaims,
+    getStats
+  } = useClaimHistory();
 
   const geminiService = new GeminiService();
+  const stats = getStats();
 
   useEffect(() => {
     if (location.state?.files) {
       const files = location.state.files as File[];
       const initialDocuments: ClaimDocument[] = files.map((file, index) => ({
-        id: `doc-${index}`,
+        id: `doc-${Date.now()}-${index}`,
         filename: file.name,
         file,
         status: 'pending'
       }));
       
       setDocuments(initialDocuments);
+      addClaims(initialDocuments);
       processDocuments(initialDocuments);
+    } else {
+      // Load from history on page refresh
+      setDocuments(history);
     }
   }, [location.state]);
 
-  const processDocuments = async (docs: ClaimDocument[]) => {
-    setStats(prev => ({ ...prev, total: docs.length }));
+  // Also load from history when component mounts
+  useEffect(() => {
+    if (!location.state?.files && history.length > 0) {
+      setDocuments(history);
+    }
+  }, [history]);
 
+  const processDocuments = async (docs: ClaimDocument[]) => {
     for (const doc of docs) {
+      updateClaim(doc.id, { status: 'analyzing' });
       setDocuments(prev => prev.map(d => 
         d.id === doc.id ? { ...d, status: 'analyzing' } : d
       ));
@@ -47,56 +66,47 @@ export default function Dashboard() {
       try {
         const result = await geminiService.analyzeInsuranceClaim(doc.file);
         
+        const updatedDoc = { 
+          ...doc, 
+          status: 'completed' as const,
+          analysisResult: result
+        };
+        
+        updateClaim(doc.id, updatedDoc);
         setDocuments(prev => prev.map(d => 
-          d.id === doc.id 
-            ? { 
-                ...d, 
-                status: 'completed',
-                analysisResult: result
-              } 
-            : d
+          d.id === doc.id ? updatedDoc : d
         ));
-
-        setStats(prev => ({
-          ...prev,
-          processed: prev.processed + 1,
-          flagged: prev.flagged + (result.flags.length > 0 ? 1 : 0)
-        }));
 
       } catch (error) {
         console.error('Analysis error:', error);
+        const errorDoc = { ...doc, status: 'error' as const };
+        updateClaim(doc.id, errorDoc);
         setDocuments(prev => prev.map(d => 
-          d.id === doc.id ? { ...d, status: 'error' } : d
+          d.id === doc.id ? errorDoc : d
         ));
         toast.error(`Failed to analyze ${doc.filename}`);
       }
     }
-
-    // Calculate average risk level
-    setTimeout(() => {
-      setDocuments(prev => {
-        const completedDocs = prev.filter(d => d.analysisResult);
-        const riskLevels = completedDocs.map(d => d.analysisResult!.riskLevel);
-        const highRisk = riskLevels.filter(r => r === 'high').length;
-        const mediumRisk = riskLevels.filter(r => r === 'medium').length;
-        
-        let avgRisk: 'low' | 'medium' | 'high' = 'low';
-        if (highRisk > completedDocs.length * 0.3) avgRisk = 'high';
-        else if (mediumRisk > completedDocs.length * 0.5) avgRisk = 'medium';
-        
-        setStats(s => ({ ...s, avgRisk }));
-        return prev;
-      });
-    }, 1000);
   };
 
-  const flaggedDocuments = documents.filter(d => 
-    d.analysisResult && d.analysisResult.flags.length > 0
-  );
+  const handleClaimClick = (document: ClaimDocument) => {
+    setSelectedClaim(document);
+    setIsModalOpen(true);
+  };
 
-  const approvedDocuments = documents.filter(d => 
-    d.analysisResult && d.analysisResult.flags.length === 0
-  );
+  const handleClearHistory = () => {
+    clearHistory();
+    setDocuments([]);
+    toast.success('History cleared successfully');
+  };
+
+  const flaggedDocuments = [...getFlaggedClaims(), ...documents.filter(d => 
+    d.analysisResult && d.analysisResult.flags.length > 0
+  )].filter((doc, index, self) => self.findIndex(d => d.id === doc.id) === index);
+
+  const approvedDocuments = [...getApprovedClaims(), ...documents.filter(d => 
+    d.analysisResult && d.analysisResult.flags.length === 0 && d.analysisResult.isConsistent
+  )].filter((doc, index, self) => self.findIndex(d => d.id === doc.id) === index);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
@@ -115,10 +125,18 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Automated fraud detection and consistency analysis</p>
             </div>
           </div>
-          <Badge variant="outline" className="px-3 py-1">
-            <Shield className="h-4 w-4 mr-1" />
-            DeepExtract AI
-          </Badge>
+          <div className="flex items-center space-x-3">
+            {history.length > 0 && (
+              <Button variant="outline" size="sm" onClick={handleClearHistory}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear History
+              </Button>
+            )}
+            <Badge variant="outline" className="px-3 py-1">
+              <Shield className="h-4 w-4 mr-1" />
+              DeepExtract AI
+            </Badge>
+          </div>
         </div>
 
         {/* Stats Overview */}
@@ -165,7 +183,7 @@ export default function Dashboard() {
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {flaggedDocuments.map(doc => (
-                <ClaimAnalysisCard key={doc.id} document={doc} />
+                <ClaimAnalysisCard key={doc.id} document={doc} onClick={() => handleClaimClick(doc)} />
               ))}
             </div>
           </div>
@@ -180,7 +198,7 @@ export default function Dashboard() {
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {approvedDocuments.map(doc => (
-                <ClaimAnalysisCard key={doc.id} document={doc} />
+                <ClaimAnalysisCard key={doc.id} document={doc} onClick={() => handleClaimClick(doc)} />
               ))}
             </div>
           </div>
@@ -213,6 +231,18 @@ export default function Dashboard() {
               </Link>
             </CardContent>
           </Card>
+        )}
+
+        {/* Claim Detail Modal */}
+        {selectedClaim && (
+          <ClaimDetailModal
+            document={selectedClaim}
+            isOpen={isModalOpen}
+            onClose={() => {
+              setIsModalOpen(false);
+              setSelectedClaim(null);
+            }}
+          />
         )}
       </div>
     </div>
