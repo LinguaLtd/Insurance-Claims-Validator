@@ -107,6 +107,116 @@ export class GeminiService {
     }
   }
 
+  async analyzeInsuranceClaim(file: File): Promise<import('@/types/insurance').ClaimAnalysisResult> {
+    try {
+      const base64Data = await this.fileToBase64(file);
+      const mimeType = this.getMimeType(file);
+
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: `Analyze this insurance claim document for fraud indicators and inconsistencies. Look for:
+1. Inconsistent information (dates, amounts, descriptions)
+2. Suspicious patterns in damage descriptions vs photos
+3. Unrealistic claim amounts or circumstances
+4. Missing critical information
+5. Photo authenticity and consistency with description
+6. Timeline inconsistencies
+
+Extract key information and provide a detailed analysis.
+
+Respond with a JSON object in this exact format:
+{
+  "isConsistent": boolean,
+  "riskLevel": "low" | "medium" | "high",
+  "flags": [
+    {
+      "type": "inconsistency" | "suspicious" | "missing_info" | "photo_mismatch" | "amount_discrepancy",
+      "severity": "low" | "medium" | "high", 
+      "description": "brief description",
+      "details": "detailed explanation"
+    }
+  ],
+  "confidence": number (0-100),
+  "summary": "overall assessment summary",
+  "extractedData": {
+    "claimAmount": "amount if found",
+    "incidentDate": "date if found", 
+    "policyNumber": "policy number if found",
+    "description": "incident description if found"
+  }
+}`
+              },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Data
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 4096,
+        }
+      };
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Gemini API error: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+        throw new Error('No analysis content found in the API response');
+      }
+
+      const analysisText = data.candidates[0].content.parts[0].text;
+      
+      try {
+        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+        
+        // Fallback response
+        return {
+          isConsistent: true,
+          riskLevel: 'low',
+          flags: [],
+          confidence: 50,
+          summary: 'Analysis completed but could not parse structured results.',
+          extractedData: {}
+        };
+      } catch (parseError) {
+        throw new Error('Failed to parse analysis results');
+      }
+
+    } catch (error) {
+      console.error('Error analyzing insurance claim:', error);
+      
+      if (error instanceof Error) {
+        throw error;
+      }
+      
+      throw new Error('Failed to analyze insurance claim. Please try again.');
+    }
+  }
+
   async analyzeTextCoherence(text: string): Promise<TextAnalysisResult> {
     try {
       const requestBody = {

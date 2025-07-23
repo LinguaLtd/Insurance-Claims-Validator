@@ -1,129 +1,109 @@
 import React, { useState } from 'react';
-import { FileText, Bot, Sparkles } from 'lucide-react';
-import { DocumentUploader } from '@/components/DocumentUploader';
-import { ExtractedText } from '@/components/ExtractedText';
-import { GeminiService, DocumentAnalysisResult } from '@/services/geminiService';
+import { useNavigate } from 'react-router-dom';
+import { Shield, Brain, AlertTriangle, TrendingUp } from 'lucide-react';
+import { MultipleDocumentUploader } from '@/components/MultipleDocumentUploader';
+import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [extractedData, setExtractedData] = useState<DocumentAnalysisResult | null>(null);
-  const geminiService = new GeminiService();
+  const navigate = useNavigate();
 
-  const handleFileUpload = async (file: File) => {
-    setIsProcessing(true);
+  const handleFilesUpload = async (files: File[]) => {
+    if (files.length === 0) return;
     
-    try {
-      toast.info(`Processing ${file.name}...`);
-      const result = await geminiService.extractTextFromDocument(file);
-      setExtractedData(result);
-      toast.success('Text extraction completed successfully!');
-    } catch (error) {
-      console.error('Error processing document:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to process document');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleClear = () => {
-    setExtractedData(null);
+    setIsProcessing(true);
+    toast.info(`Processing ${files.length} document${files.length > 1 ? 's' : ''}...`);
+    
+    // Navigate to dashboard with the files
+    navigate('/dashboard', { state: { files } });
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-gradient-card">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center justify-center space-x-3">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="container mx-auto px-4 py-16 space-y-16">
+        {/* Hero Section */}
+        <div className="text-center space-y-6 mb-12">
+          <div className="flex justify-center">
             <div className="relative">
-              <FileText className="h-10 w-10 text-primary" />
-              <Bot className="h-5 w-5 text-accent absolute -top-1 -right-1" />
+              <Shield className="h-20 w-20 text-primary" />
+              <div className="absolute -top-2 -right-2 h-8 w-8 bg-accent rounded-full flex items-center justify-center">
+                <Brain className="h-5 w-5 text-accent-foreground" />
+              </div>
             </div>
-            <div className="text-center">
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                DeepExtract
-              </h1>
-              <p className="text-muted-foreground">
-                AI-Powered Document Text Extraction
-              </p>
-            </div>
-            <Sparkles className="h-6 w-6 text-accent animate-pulse" />
+          </div>
+          
+          <div>
+            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
+              DeepExtract
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              AI-powered insurance claims fraud detection and analysis. Upload multiple documents 
+              to automatically identify inconsistencies, suspicious patterns, and potential fraud indicators.
+            </p>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          {!extractedData ? (
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Extract Text from Any Document
-                </h2>
-                <p className="text-muted-foreground max-w-2xl mx-auto">
-                  Upload your documents and let our AI extract all the text content. 
-                  Perfect for PDFs, images, Word documents, and more.
-                </p>
-              </div>
+        {/* Main Content */}
+        <div className="space-y-12">
+          <MultipleDocumentUploader 
+            onFilesUpload={handleFilesUpload}
+            isProcessing={isProcessing}
+          />
+
+          {/* Features Section */}
+          <div className="mt-16">
+            <h2 className="text-2xl font-semibold text-center text-foreground mb-8">
+              Advanced Insurance Claims Analysis
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="bg-gradient-card border-primary/20 hover:border-primary/40 transition-colors">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="flex justify-center">
+                    <AlertTriangle className="h-12 w-12 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground">Fraud Detection</h3>
+                  <p className="text-muted-foreground">
+                    Automatically identify suspicious patterns and potential fraud indicators in claims
+                  </p>
+                </CardContent>
+              </Card>
               
-              <DocumentUploader 
-                onFileUpload={handleFileUpload}
-                isProcessing={isProcessing}
-              />
-
-              {/* Features */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-                    <FileText className="h-6 w-6 text-primary" />
+              <Card className="bg-gradient-card border-accent/20 hover:border-accent/40 transition-colors">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="flex justify-center">
+                    <TrendingUp className="h-12 w-12 text-accent" />
                   </div>
-                  <h3 className="font-semibold text-foreground">Multiple Formats</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Supports PDF, images, Word documents, and text files
+                  <h3 className="text-lg font-semibold text-foreground">Risk Assessment</h3>
+                  <p className="text-muted-foreground">
+                    Get comprehensive risk scores and confidence levels for each claim
                   </p>
-                </div>
-                
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mx-auto">
-                    <Bot className="h-6 w-6 text-accent" />
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-card border-secondary/20 hover:border-secondary/40 transition-colors">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="flex justify-center">
+                    <Brain className="h-12 w-12 text-secondary-foreground" />
                   </div>
-                  <h3 className="font-semibold text-foreground">AI-Powered</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Uses advanced AI for accurate text extraction
+                  <h3 className="text-lg font-semibold text-foreground">AI Analysis</h3>
+                  <p className="text-muted-foreground">
+                    Advanced AI analyzes document consistency and photo authenticity
                   </p>
-                </div>
-                
-                <div className="text-center space-y-3">
-                  <div className="w-12 h-12 bg-secondary/20 rounded-lg flex items-center justify-center mx-auto">
-                    <Sparkles className="h-6 w-6 text-secondary-foreground" />
-                  </div>
-                  <h3 className="font-semibold text-foreground">Smart Processing</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Preserves structure and handles complex layouts
-                  </p>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
-          ) : (
-            <ExtractedText 
-              text={extractedData.extractedText}
-              filename={extractedData.filename}
-              onClear={handleClear}
-            />
-          )}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border bg-gradient-card mt-16">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center text-muted-foreground">
-            <p>Powered by Advanced AI • Built with React & Tailwind CSS</p>
           </div>
         </div>
-      </footer>
+
+        {/* Footer */}
+        <footer className="text-center border-t border-border pt-8">
+          <p className="text-muted-foreground">
+            Streamline your insurance claims processing with AI-powered fraud detection.
+            Protect your business with intelligent document analysis.
+          </p>
+        </footer>
+      </div>
     </div>
   );
 };
