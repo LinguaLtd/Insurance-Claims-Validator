@@ -67,8 +67,8 @@ export function MultipleDocumentUploader({ onFilesUpload, isProcessing }: Multip
               </div>
               
               <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                <AlertCircle className="h-4 w-4" />
-                <span>Supported: PDF files only</span>
+                {/* <AlertCircle className="h-4 w-4" /> */}
+                <span></span>
               </div>
             </div>
           )}

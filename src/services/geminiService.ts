@@ -1,5 +1,7 @@
-const GEMINI_API_KEY = 'AIzaSyBMbxFXZtvZGritVobyu5U5XbzR4xYNOVA';
+const GEMINI_API_KEY = "AIzaSyDKv35jGW9cQPBgCYR_FtL7FxG7HYciubU"
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+// AIzaSyDKv35jGW9cQPBgCYR_FtL7FxG7HYciubU || 'AIzaSyBMbxFXZtvZGritVobyu5U5XbzR4xYNOVA'; 
 
 export interface DocumentAnalysisResult {
   extractedText: string;
