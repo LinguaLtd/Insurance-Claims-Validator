@@ -21,38 +21,37 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="container mx-auto px-4 py-16 space-y-16">
-        {/* Hero Section */}
-        <div className="text-center space-y-6 mb-12">
-          <div className="flex justify-center">
+      <div className="container mx-auto px-4 py-10 space-y-10">
+        {/* Header & Tabs */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex justify-center mb-2">
             <div className="relative">
-              <Shield className="h-20 w-20 text-primary" />
-              <div className="absolute -top-2 -right-2 h-8 w-8 bg-accent rounded-full flex items-center justify-center">
-                <Brain className="h-5 w-5 text-accent-foreground" />
+              <Shield className="h-16 w-16 text-primary" />
+              <div className="absolute -top-2 -right-2 h-7 w-7 bg-accent rounded-full flex items-center justify-center">
+                <Brain className="h-4 w-4 text-accent-foreground" />
               </div>
             </div>
           </div>
-          
-          <div>
-            <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
-              DeepExtract
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              AI-powered insurance claims fraud detection and analysis. Upload multiple documents 
-              to automatically identify inconsistencies, suspicious patterns, and potential fraud indicators.
-            </p>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">DeepTrack Foundry</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            AI-powered insurance claims fraud detection and analysis. Upload multiple documents to automatically identify inconsistencies, suspicious patterns, and potential fraud indicators.
+          </p>
+          {/* Tabs */}
+          <div className="flex gap-4 mt-6">
+            <button className="px-4 py-2 rounded bg-primary text-white hover:bg-primary/80 transition" onClick={() => navigate('/dashboard')}>Dashboard</button>
+            <button className="px-4 py-2 rounded bg-secondary text-foreground hover:bg-secondary/80 transition" onClick={() => navigate('/dashboard', { state: { tab: 'history' } })}>History</button>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="space-y-12">
+        <div className="space-y-10">
           <MultipleDocumentUploader 
             onFilesUpload={handleFilesUpload}
             isProcessing={isProcessing}
           />
 
           {/* Features Section */}
-          <div className="mt-16">
+          <div className="mt-10">
             <h2 className="text-2xl font-semibold text-center text-foreground mb-8">
               Advanced Insurance Claims Analysis
             </h2>

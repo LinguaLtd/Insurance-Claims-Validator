@@ -121,7 +121,7 @@ export default function Dashboard() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Claims Analysis Dashboard</h1>
+              <h1 className="text-3xl font-bold text-foreground">DeepTrack Foundry Dashboard</h1>
               <p className="text-muted-foreground">Automated fraud detection and consistency analysis</p>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function Dashboard() {
             )}
             <Badge variant="outline" className="px-3 py-1">
               <Shield className="h-4 w-4 mr-1" />
-              DeepExtract AI
+              DeepTrack Foundry
             </Badge>
           </div>
         </div>
