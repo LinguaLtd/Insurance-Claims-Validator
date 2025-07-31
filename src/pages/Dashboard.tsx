@@ -116,7 +116,6 @@ export default function Dashboard() {
           <div className="flex items-center space-x-4">
             <Link to="/">
               <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Upload
               </Button>
             </Link>
@@ -133,7 +132,6 @@ export default function Dashboard() {
               </Button>
             )}
             <Badge variant="outline" className="px-3 py-1">
-              <Shield className="h-4 w-4 mr-1" />
               DeepTrack Foundry
             </Badge>
           </div>
