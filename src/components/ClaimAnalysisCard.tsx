@@ -10,7 +10,7 @@ interface ClaimAnalysisCardProps {
   document: ClaimDocument;
   onClick?: () => void;
 }
-
+//FunctiontoAnalyzeClaim
 export function ClaimAnalysisCard({ document, onClick }: ClaimAnalysisCardProps) {
   const getStatusIcon = () => {
     switch (document.status) {
