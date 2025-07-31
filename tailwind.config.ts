@@ -1,3 +1,4 @@
+//Managing configurations
 import type { Config } from "tailwindcss";
 
 export default {
