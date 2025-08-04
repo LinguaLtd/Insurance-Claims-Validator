@@ -15,6 +15,7 @@ interface ExtractedTextProps {
   onClear: () => void;
 }
 
+
 export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [analysisResult, setAnalysisResult] = useState<TextAnalysisResult | null>(null);
@@ -103,6 +104,7 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
         </CardContent>
       </Card>
 
+      
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -227,6 +229,7 @@ export function ExtractedText({ text, filename, onClear }: ExtractedTextProps) {
               <h4 className="font-semibold mb-2">Overall Assessment:</h4>
               <p className="text-muted-foreground">{analysisResult.overallAssessment}</p>
             </div>
+
             
             {analysisResult.discrepancies.length > 0 && (
               <div>
